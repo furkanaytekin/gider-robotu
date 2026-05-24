@@ -1,5 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 
+const defaultLimits = {
+  Market: 10000,
+  Tütün: 3000,
+  Giyim: 5000,
+  Yakıt: 7000,
+  "Yeme-İçme": 6000,
+  Fatura: 8000,
+  Sağlık: 4000,
+  Ev: 5000,
+  Diğer: 3000,
+};
+
 function App() {
   const [text, setText] = useState("");
   const [expenses, setExpenses] = useState([]);
@@ -8,17 +20,10 @@ function App() {
   const [time, setTime] = useState(new Date());
   const [search, setSearch] = useState("");
 
-  const limits = {
-    Market: 10000,
-    Tütün: 3000,
-    Giyim: 5000,
-    Yakıt: 7000,
-    "Yeme-İçme": 6000,
-    Fatura: 8000,
-    Sağlık: 4000,
-    Ev: 5000,
-    Diğer: 3000,
-  };
+  const [limits, setLimits] = useState(() => {
+    const saved = localStorage.getItem("gider_robotu_limits");
+    return saved ? JSON.parse(saved) : defaultLimits;
+  });
 
   const icons = {
     Market: "🛒",
@@ -52,6 +57,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem("gider_robotu_expenses", JSON.stringify(expenses));
   }, [expenses]);
+
+  useEffect(() => {
+    localStorage.setItem("gider_robotu_limits", JSON.stringify(limits));
+  }, [limits]);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -124,7 +133,6 @@ function App() {
   }, [expenses]);
 
   const topCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
-
   const overLimits = Object.entries(categoryTotals).filter(([cat, val]) => val > limits[cat]);
 
   const aiComment = () => {
@@ -164,9 +172,7 @@ function App() {
     <div style={{ minHeight: "100vh", background: bg, color: textColor, fontFamily: "Arial", padding: 16, boxSizing: "border-box" }}>
       <div style={{ maxWidth: 460, margin: "auto" }}>
         <div style={{ textAlign: "center", marginBottom: 18 }}>
-          <div style={{ fontSize: 54 }}>🤖</div>
-          <h1 style={{ margin: 0, fontSize: 42 }}>Gider Robotu</h1>
-          <p style={{ opacity: 0.75 }}>Akıllı harcama takip ve analiz sistemi</p>
+          <div style={{ fontSize: 70, marginBottom: 10 }}>🤖</div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginBottom: 14 }}>
@@ -197,10 +203,8 @@ function App() {
               <p>{time.toLocaleDateString("tr-TR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
             </div>
 
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              style={{ ...btn, width: "100%", marginBottom: 14, background: darkMode ? "#facc15" : "#020617", color: darkMode ? "black" : "white" }}
-            >
+            <button onClick={() => setDarkMode(!darkMode)}
+              style={{ ...btn, width: "100%", marginBottom: 14, background: darkMode ? "#facc15" : "#020617", color: darkMode ? "black" : "white" }}>
               {darkMode ? "☀️ Gündüz Modu" : "🌙 Gece Modu"}
             </button>
 
@@ -217,7 +221,8 @@ function App() {
               style={{ width: "100%", padding: 16, borderRadius: 18, border: "none", boxSizing: "border-box", fontSize: 16, marginBottom: 10 }}
             />
 
-            <button onClick={addExpense} style={{ ...btn, width: "100%", background: "linear-gradient(90deg,#2563eb,#9333ea)", color: "white", fontSize: 17 }}>
+            <button onClick={addExpense}
+              style={{ ...btn, width: "100%", background: "linear-gradient(90deg,#2563eb,#9333ea)", color: "white", fontSize: 17 }}>
               💾 Harcamayı Kaydet
             </button>
 
@@ -240,7 +245,8 @@ function App() {
                   <b>{x.amount} TL</b>
                 </div>
                 <p>{x.category} | {x.installment} taksit | Aylık: {x.monthlyAmount} TL</p>
-                <button onClick={() => setExpenses(expenses.filter((e) => e.id !== x.id))} style={{ ...btn, background: "#dc2626", color: "white", width: "100%" }}>
+                <button onClick={() => setExpenses(expenses.filter((e) => e.id !== x.id))}
+                  style={{ ...btn, background: "#dc2626", color: "white", width: "100%" }}>
                   Sil
                 </button>
               </div>
@@ -284,21 +290,45 @@ function App() {
         {tab === "limit" && (
           <div style={card}>
             <h2>⚠️ Kategori Limitleri</h2>
+
             {Object.entries(limits).map(([cat, limit]) => {
               const used = categoryTotals[cat] || 0;
               const percent = Math.min(100, Math.round((used / limit) * 100));
+
               return (
-                <div key={cat} style={{ marginBottom: 15 }}>
+                <div key={cat} style={{ marginBottom: 18 }}>
                   <b>{icons[cat]} {cat}: {used} / {limit} TL</b>
-                  <div style={{ height: 16, background: "#e5e7eb", borderRadius: 20, marginTop: 6, overflow: "hidden" }}>
+
+                  <input
+                    type="number"
+                    value={limits[cat]}
+                    onChange={(e) => setLimits({ ...limits, [cat]: Number(e.target.value) })}
+                    style={{
+                      width: "100%",
+                      padding: 10,
+                      marginTop: 8,
+                      borderRadius: 12,
+                      border: "none",
+                      boxSizing: "border-box",
+                    }}
+                  />
+
+                  <div style={{ height: 16, background: "#e5e7eb", borderRadius: 20, marginTop: 8, overflow: "hidden" }}>
                     <div style={{ width: `${percent}%`, height: "100%", background: used > limit ? "#dc2626" : colors[cat], borderRadius: 20 }} />
                   </div>
                 </div>
               );
             })}
 
+            <button
+              onClick={() => setLimits(defaultLimits)}
+              style={{ ...btn, width: "100%", background: "#64748b", color: "white", marginTop: 10 }}
+            >
+              Limitleri Sıfırla
+            </button>
+
             {overLimits.length > 0 && (
-              <div style={{ background: "#fee2e2", color: "#7f1d1d", padding: 14, borderRadius: 16 }}>
+              <div style={{ background: "#fee2e2", color: "#7f1d1d", padding: 14, borderRadius: 16, marginTop: 14 }}>
                 <b>Limit Aşıldı!</b>
                 {overLimits.map(([cat, val]) => (
                   <p key={cat}>{cat}: {val} TL / Limit: {limits[cat]} TL</p>
