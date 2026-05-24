@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
+  "https://jqdsdvkoqebrykejjlka.supabase.co/rest/v1/"
+  "sb_publishable_U7yw_R8E2z1XGy48YU7bNQ_gtMDliTq"
 );
 
 export default function App() {
