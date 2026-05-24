@@ -1,136 +1,246 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 function App() {
   const [text, setText] = useState("");
   const [expenses, setExpenses] = useState([]);
   const [tab, setTab] = useState("ana");
+  const [darkMode, setDarkMode] = useState(false);
   const [time, setTime] = useState(new Date());
+  const [search, setSearch] = useState("");
+
+  const limits = {
+    Market: 10000,
+    Tütün: 3000,
+    Giyim: 5000,
+    Yakıt: 7000,
+    "Yeme-İçme": 6000,
+    Fatura: 8000,
+    Sağlık: 4000,
+    Ev: 5000,
+    Diğer: 3000,
+  };
+
+  const icons = {
+    Market: "🛒",
+    Tütün: "🚬",
+    Giyim: "👕",
+    Yakıt: "⛽",
+    "Yeme-İçme": "🍔",
+    Fatura: "💡",
+    Sağlık: "🏥",
+    Ev: "🏠",
+    Diğer: "📦",
+  };
+
+  const colors = {
+    Market: "#22c55e",
+    Tütün: "#ef4444",
+    Giyim: "#a855f7",
+    Yakıt: "#f97316",
+    "Yeme-İçme": "#ec4899",
+    Fatura: "#3b82f6",
+    Sağlık: "#14b8a6",
+    Ev: "#6366f1",
+    Diğer: "#64748b",
+  };
 
   useEffect(() => {
-    const saved = localStorage.getItem("expenses");
+    const saved = localStorage.getItem("gider_robotu_expenses");
     if (saved) setExpenses(JSON.parse(saved));
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("expenses", JSON.stringify(expenses));
+    localStorage.setItem("gider_robotu_expenses", JSON.stringify(expenses));
   }, [expenses]);
 
   useEffect(() => {
-    const t = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
-  const parseCategory = (txt) => {
-    const x = txt.toLowerCase();
-    if (x.includes("market")) return "Market";
-    if (x.includes("sigara") || x.includes("tütün")) return "Tütün";
-    if (x.includes("pantolon") || x.includes("ayakkabı") || x.includes("giyim")) return "Giyim";
-    if (x.includes("yakıt") || x.includes("benzin") || x.includes("mazot")) return "Yakıt";
-    if (x.includes("yemek") || x.includes("kahve")) return "Yeme-İçme";
-    return "Diğer";
+  const parseExpense = (input) => {
+    const amount = Number(input.match(/\d+/)?.[0] || 0);
+    const installmentMatch = input.match(/(\d+)\s*taksit/i);
+    const installment = installmentMatch ? Number(installmentMatch[1]) : 1;
+    const lower = input.toLowerCase();
+
+    let category = "Diğer";
+    if (lower.includes("market") || lower.includes("migros") || lower.includes("a101") || lower.includes("bim")) category = "Market";
+    else if (lower.includes("sigara") || lower.includes("tütün")) category = "Tütün";
+    else if (lower.includes("pantolon") || lower.includes("ayakkabı") || lower.includes("giyim") || lower.includes("mont")) category = "Giyim";
+    else if (lower.includes("benzin") || lower.includes("mazot") || lower.includes("yakıt")) category = "Yakıt";
+    else if (lower.includes("yemek") || lower.includes("kahve") || lower.includes("burger") || lower.includes("restoran")) category = "Yeme-İçme";
+    else if (lower.includes("elektrik") || lower.includes("su") || lower.includes("internet") || lower.includes("doğalgaz")) category = "Fatura";
+    else if (lower.includes("eczane") || lower.includes("ilaç") || lower.includes("hastane")) category = "Sağlık";
+    else if (lower.includes("ev") || lower.includes("koltuk") || lower.includes("mutfak")) category = "Ev";
+
+    return {
+      id: Date.now(),
+      raw: input,
+      description: input.replace(/\d+/g, "").replace(/taksit/gi, "").trim() || input,
+      amount,
+      monthlyAmount: Math.round(amount / installment),
+      installment,
+      category,
+      date: new Date().toISOString().slice(0, 10),
+      dateText: new Date().toLocaleDateString("tr-TR"),
+      month: new Date().toLocaleDateString("tr-TR", { month: "long", year: "numeric" }),
+      year: new Date().getFullYear(),
+    };
   };
 
   const addExpense = () => {
     if (!text.trim()) return;
-
-    const amount = Number(text.match(/\d+/)?.[0] || 0);
-    const category = parseCategory(text);
-
-    const item = {
-      id: Date.now(),
-      text,
-      amount,
-      category,
-      date: new Date().toLocaleDateString("tr-TR"),
-      month: new Date().toLocaleDateString("tr-TR", { month: "long", year: "numeric" }),
-    };
-
-    setExpenses([item, ...expenses]);
+    setExpenses([parseExpense(text), ...expenses]);
     setText("");
   };
 
-  const total = expenses.reduce((s, x) => s + x.amount, 0);
-  const today = new Date().toLocaleDateString("tr-TR");
-  const todayTotal = expenses.filter(x => x.date === today).reduce((s, x) => s + x.amount, 0);
+  const today = new Date().toISOString().slice(0, 10);
 
-  const byCategory = expenses.reduce((acc, x) => {
-    acc[x.category] = (acc[x.category] || 0) + x.amount;
-    return acc;
-  }, {});
+  const filteredExpenses = expenses.filter((x) =>
+    x.raw.toLowerCase().includes(search.toLowerCase()) ||
+    x.category.toLowerCase().includes(search.toLowerCase()) ||
+    x.dateText.toLowerCase().includes(search.toLowerCase())
+  );
 
-  const byMonth = expenses.reduce((acc, x) => {
-    acc[x.month] = (acc[x.month] || 0) + x.amount;
-    return acc;
-  }, {});
+  const total = expenses.reduce((s, x) => s + x.monthlyAmount, 0);
+  const todayTotal = expenses.filter((x) => x.date === today).reduce((s, x) => s + x.monthlyAmount, 0);
+  const yearlyTotal = expenses.reduce((s, x) => s + x.amount, 0);
 
-  const box = {
-    background: "rgba(255,255,255,0.85)",
-    borderRadius: 18,
-    padding: 16,
+  const categoryTotals = useMemo(() => {
+    const obj = {};
+    expenses.forEach((x) => {
+      obj[x.category] = (obj[x.category] || 0) + x.monthlyAmount;
+    });
+    return obj;
+  }, [expenses]);
+
+  const monthTotals = useMemo(() => {
+    const obj = {};
+    expenses.forEach((x) => {
+      obj[x.month] = (obj[x.month] || 0) + x.monthlyAmount;
+    });
+    return obj;
+  }, [expenses]);
+
+  const topCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
+
+  const overLimits = Object.entries(categoryTotals).filter(([cat, val]) => val > limits[cat]);
+
+  const aiComment = () => {
+    if (!expenses.length) return "Henüz yorum yapacak veri yok. Birkaç harcama eklediğinde analiz başlayacak.";
+    if (overLimits.length) return `${overLimits[0][0]} limiti aşılmış. Bu kategori kontrol edilirse bütçeye hızlı etki eder.`;
+    if (topCategory) return `Bu ay en yüksek harcama ${topCategory[0]} kategorisinde. Yaklaşık ${Math.round(topCategory[1] * 0.2)} TL azaltma hedefi mantıklı olur.`;
+    return "Harcamalar dengeli görünüyor.";
+  };
+
+  const bg = darkMode
+    ? "linear-gradient(135deg,#020617,#111827,#1e1b4b)"
+    : "linear-gradient(135deg,#bfdbfe,#e9d5ff,#fde68a)";
+
+  const textColor = darkMode ? "#f8fafc" : "#0f172a";
+  const cardBg = darkMode ? "rgba(15,23,42,0.82)" : "rgba(255,255,255,0.82)";
+
+  const card = {
+    background: cardBg,
+    color: textColor,
+    borderRadius: 22,
+    padding: 18,
     marginBottom: 14,
-    boxShadow: "0 6px 20px rgba(0,0,0,0.12)",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.14)",
+    backdropFilter: "blur(14px)",
+    border: darkMode ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(255,255,255,0.65)",
+  };
+
+  const btn = {
+    border: "none",
+    borderRadius: 16,
+    padding: 13,
+    fontWeight: "bold",
+    cursor: "pointer",
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "linear-gradient(135deg,#bfdbfe,#e9d5ff,#fde68a)",
-      fontFamily: "Arial",
-      padding: 16,
-      boxSizing: "border-box"
-    }}>
-      <div style={{ maxWidth: 430, margin: "auto" }}>
-        <h1 style={{ textAlign: "center" }}>🤖 Gider Robotu</h1>
+    <div style={{ minHeight: "100vh", background: bg, color: textColor, fontFamily: "Arial", padding: 16, boxSizing: "border-box" }}>
+      <div style={{ maxWidth: 460, margin: "auto" }}>
+        <div style={{ textAlign: "center", marginBottom: 18 }}>
+          <div style={{ fontSize: 54 }}>🤖</div>
+          <h1 style={{ margin: 0, fontSize: 42 }}>Gider Robotu</h1>
+          <p style={{ opacity: 0.75 }}>Akıllı harcama takip ve analiz sistemi</p>
+        </div>
 
-        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-          {["ana", "rapor", "limit", "ai"].map(x => (
-            <button key={x} onClick={() => setTab(x)} style={{
-              flex: 1,
-              padding: 12,
-              border: "none",
-              borderRadius: 14,
-              background: tab === x ? "#2563eb" : "white",
-              color: tab === x ? "white" : "#111827",
-              fontWeight: "bold"
-            }}>
-              {x.toUpperCase()}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginBottom: 14 }}>
+          {[
+            ["ana", "ANA"],
+            ["rapor", "RAPOR"],
+            ["limit", "LİMİT"],
+            ["ai", "AI"],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              style={{
+                ...btn,
+                background: tab === key ? "linear-gradient(90deg,#2563eb,#7c3aed)" : cardBg,
+                color: tab === key ? "white" : textColor,
+              }}
+            >
+              {label}
             </button>
           ))}
         </div>
 
         {tab === "ana" && (
           <>
-            <div style={{ ...box, textAlign: "center" }}>
-              <h2>{time.toLocaleTimeString("tr-TR")}</h2>
+            <div style={{ ...card, textAlign: "center" }}>
+              <h2 style={{ fontSize: 38, margin: 0 }}>{time.toLocaleTimeString("tr-TR")}</h2>
               <p>{time.toLocaleDateString("tr-TR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
             </div>
 
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              style={{ ...btn, width: "100%", marginBottom: 14, background: darkMode ? "#facc15" : "#020617", color: darkMode ? "black" : "white" }}
+            >
+              {darkMode ? "☀️ Gündüz Modu" : "🌙 Gece Modu"}
+            </button>
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <div style={box}><b>Bugün</b><h2>{todayTotal} TL</h2></div>
-              <div style={box}><b>Toplam</b><h2>{total} TL</h2></div>
+              <div style={card}><b>💳 Bugün</b><h2>{todayTotal} TL</h2></div>
+              <div style={card}><b>📈 Toplam</b><h2>{total} TL</h2></div>
             </div>
 
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="300 market / 1500 pantolon"
-              style={{ width: "100%", padding: 15, borderRadius: 14, border: "none", boxSizing: "border-box" }}
+              onKeyDown={(e) => e.key === "Enter" && addExpense()}
+              placeholder="300 market / 1500 pantolon 3 taksit"
+              style={{ width: "100%", padding: 16, borderRadius: 18, border: "none", boxSizing: "border-box", fontSize: 16, marginBottom: 10 }}
             />
 
-            <button onClick={addExpense} style={{
-              width: "100%", padding: 15, marginTop: 10, border: "none",
-              borderRadius: 14, background: "#2563eb", color: "white", fontWeight: "bold"
-            }}>
+            <button onClick={addExpense} style={{ ...btn, width: "100%", background: "linear-gradient(90deg,#2563eb,#9333ea)", color: "white", fontSize: 17 }}>
               💾 Harcamayı Kaydet
             </button>
 
             <h2>Son Harcamalar</h2>
-            {expenses.map(x => (
-              <div key={x.id} style={box}>
-                <b>{x.text}</b>
-                <p>{x.date} - {x.category} - {x.amount} TL</p>
-                <button onClick={() => setExpenses(expenses.filter(e => e.id !== x.id))}
-                  style={{ background: "#dc2626", color: "white", border: "none", padding: 8, borderRadius: 10 }}>
+
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Ara: market, sigara, giyim..."
+              style={{ width: "100%", padding: 13, borderRadius: 14, border: "none", boxSizing: "border-box", marginBottom: 12 }}
+            />
+
+            {filteredExpenses.map((x) => (
+              <div key={x.id} style={card}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                  <div>
+                    <b>{icons[x.category]} {x.description}</b>
+                    <div style={{ opacity: 0.7, fontSize: 13 }}>{x.dateText}</div>
+                  </div>
+                  <b>{x.amount} TL</b>
+                </div>
+                <p>{x.category} | {x.installment} taksit | Aylık: {x.monthlyAmount} TL</p>
+                <button onClick={() => setExpenses(expenses.filter((e) => e.id !== x.id))} style={{ ...btn, background: "#dc2626", color: "white", width: "100%" }}>
                   Sil
                 </button>
               </div>
@@ -139,38 +249,73 @@ function App() {
         )}
 
         {tab === "rapor" && (
-          <div style={box}>
-            <h2>📊 Raporlar</h2>
-            <h3>Toplam Harcama: {total} TL</h3>
+          <>
+            <div style={card}>
+              <h2>📊 Genel Rapor</h2>
+              <h3>Aylık Toplam: {total} TL</h3>
+              <h3>Yıllık Toplam: {yearlyTotal} TL</h3>
+              <p>İşlem Sayısı: {expenses.length}</p>
+            </div>
 
-            <h3>Kategoriler</h3>
-            {Object.entries(byCategory).map(([k, v]) => (
-              <p key={k}><b>{k}</b>: {v} TL</p>
-            ))}
+            <div style={card}>
+              <h2>Kategori Grafiği</h2>
+              {Object.entries(categoryTotals).map(([cat, val]) => {
+                const percent = total ? Math.round((val / total) * 100) : 0;
+                return (
+                  <div key={cat} style={{ marginBottom: 14 }}>
+                    <b>{icons[cat]} {cat} - {val} TL - %{percent}</b>
+                    <div style={{ height: 16, background: "#e5e7eb", borderRadius: 20, marginTop: 6, overflow: "hidden" }}>
+                      <div style={{ width: `${percent}%`, height: "100%", background: colors[cat], borderRadius: 20 }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
-            <h3>Aylık Geçmiş</h3>
-            {Object.entries(byMonth).map(([k, v]) => (
-              <p key={k}><b>{k}</b>: {v} TL</p>
-            ))}
-          </div>
+            <div style={card}>
+              <h2>Aylık Geçmiş</h2>
+              {Object.entries(monthTotals).map(([month, val]) => (
+                <p key={month}><b>{month}</b>: {val} TL</p>
+              ))}
+            </div>
+          </>
         )}
 
         {tab === "limit" && (
-          <div style={box}>
-            <h2>⚠️ Limitler</h2>
-            <p>Şimdilik manuel takip.</p>
-            <p>Toplam harcama: <b>{total} TL</b></p>
+          <div style={card}>
+            <h2>⚠️ Kategori Limitleri</h2>
+            {Object.entries(limits).map(([cat, limit]) => {
+              const used = categoryTotals[cat] || 0;
+              const percent = Math.min(100, Math.round((used / limit) * 100));
+              return (
+                <div key={cat} style={{ marginBottom: 15 }}>
+                  <b>{icons[cat]} {cat}: {used} / {limit} TL</b>
+                  <div style={{ height: 16, background: "#e5e7eb", borderRadius: 20, marginTop: 6, overflow: "hidden" }}>
+                    <div style={{ width: `${percent}%`, height: "100%", background: used > limit ? "#dc2626" : colors[cat], borderRadius: 20 }} />
+                  </div>
+                </div>
+              );
+            })}
+
+            {overLimits.length > 0 && (
+              <div style={{ background: "#fee2e2", color: "#7f1d1d", padding: 14, borderRadius: 16 }}>
+                <b>Limit Aşıldı!</b>
+                {overLimits.map(([cat, val]) => (
+                  <p key={cat}>{cat}: {val} TL / Limit: {limits[cat]} TL</p>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {tab === "ai" && (
-          <div style={box}>
-            <h2>🤖 AI Yorumu</h2>
-            <p>
-              En çok harcama yaptığın kategori:
-              <b> {Object.entries(byCategory).sort((a,b)=>b[1]-a[1])[0]?.[0] || "Henüz veri yok"}</b>
-            </p>
-            <p>Bu kategoriyi azaltırsan bütçeye en hızlı etkiyi yaparsın.</p>
+          <div style={card}>
+            <h2>🤖 AI Finans Yorumu</h2>
+            <p>{aiComment()}</p>
+            <hr />
+            <p>Toplam harcama: <b>{total} TL</b></p>
+            <p>En yüksek kategori: <b>{topCategory?.[0] || "Yok"}</b></p>
+            <p>Önerilen tasarruf hedefi: <b>{topCategory ? Math.round(topCategory[1] * 0.2) : 0} TL</b></p>
           </div>
         )}
       </div>
