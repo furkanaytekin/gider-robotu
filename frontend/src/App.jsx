@@ -276,8 +276,25 @@ function App() {
     <div style={{ minHeight: "100vh", background: bg, color: textColor, fontFamily: "Arial", padding: 16, boxSizing: "border-box" }}>
       <div style={{ maxWidth: 460, margin: "auto" }}>
         <div style={{ textAlign: "center", marginBottom: 18 }}>
-          <div style={{ fontSize: 70 }}>🤖</div>
-          <p>{session.user.email}</p>
+          <div
+  style={{
+    fontSize: 70,
+    marginBottom: 10
+  }}
+>
+  🤖
+</div>
+          <p
+  style={{
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#2563eb",
+    marginTop: 10,
+    marginBottom: 15
+  }}
+>
+  💙 Ortak Hesap
+</p>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginBottom: 14 }}>
