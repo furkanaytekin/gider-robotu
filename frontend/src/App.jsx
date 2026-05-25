@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-  const SUPABASE_URL = "https://jqdsdvkoqebrykejjlka.supabase.co"
+const SUPABASE_URL = "https://jqdsdvkoqebrykejjlka.supabase.co"
   const SUPABASE_KEY = "sb_publishable_U7yw_R8E2z1XGy48YU7bNQ_gtMDliTq"
 
   const supabase =
   createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const defaultLimits = {
+const defaultLimits = {
   Market: 10000,
   Tütün: 3000,
   Giyim: 5000,
@@ -27,7 +27,6 @@ function App() {
   const [tab, setTab] = useState("ana");
   const [darkMode, setDarkMode] = useState(false);
   const [time, setTime] = useState(new Date());
-
   const [text, setText] = useState("");
   const [expenses, setExpenses] = useState([]);
   const [search, setSearch] = useState("");
@@ -126,7 +125,7 @@ function App() {
       kategori,
       taksit,
       aylik_tutar,
-      kullanici: session?.user?.email || "",
+      kullanici: "Ortak Hesap",
     };
   }
 
@@ -220,49 +219,39 @@ function App() {
 
   const bg = darkMode
     ? "linear-gradient(135deg,#020617,#111827,#1e1b4b)"
-    : "linear-gradient(135deg,#bfdbfe,#e9d5ff,#fde68a)";
+    : "linear-gradient(135deg,#dbeafe,#ede9fe,#ffedd5)";
 
   const textColor = darkMode ? "#f8fafc" : "#0f172a";
-  const cardBg = darkMode ? "rgba(15,23,42,0.85)" : "rgba(255,255,255,0.85)";
+  const cardBg = darkMode ? "rgba(15,23,42,0.9)" : "rgba(255,255,255,0.9)";
 
   const card = {
     background: cardBg,
     color: textColor,
-    borderRadius: 22,
+    borderRadius: 24,
     padding: 18,
     marginBottom: 14,
-    boxShadow: "0 10px 30px rgba(0,0,0,0.14)",
+    boxShadow: "0 10px 28px rgba(15,23,42,0.12)",
+    border: darkMode ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(255,255,255,0.7)",
   };
 
   const btn = {
     border: "none",
-    borderRadius: 16,
-    padding: 13,
-    fontWeight: "bold",
+    borderRadius: 18,
+    padding: 14,
+    fontWeight: "800",
     cursor: "pointer",
+    fontSize: 16,
   };
 
   if (!session) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center", background: bg, fontFamily: "Arial" }}>
-        <div style={{ ...card, width: 330 }}>
-          <h1 style={{ textAlign: "center" }}>Giriş Yap</h1>
+      <div style={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center", background: bg, fontFamily: "Arial", padding: 16 }}>
+        <div style={{ ...card, width: "100%", maxWidth: 360 }}>
+          <h1 style={{ textAlign: "center", fontSize: 34 }}>Giriş Yap</h1>
 
-          <input
-            placeholder="Mail"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{ width: "100%", padding: 13, marginBottom: 10, borderRadius: 12, boxSizing: "border-box" }}
-          />
+          <input className="appInput" placeholder="Mail" value={email} onChange={(e) => setEmail(e.target.value)} />
 
-          <input
-            type="password"
-            placeholder="Şifre"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && girisYap()}
-            style={{ width: "100%", padding: 13, marginBottom: 10, borderRadius: 12, boxSizing: "border-box" }}
-          />
+          <input className="appInput" type="password" placeholder="Şifre" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && girisYap()} />
 
           <button onClick={girisYap} style={{ ...btn, width: "100%", background: "#2563eb", color: "white" }}>
             Giriş Yap
@@ -274,30 +263,185 @@ function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: bg, color: textColor, fontFamily: "Arial", padding: 16, boxSizing: "border-box" }}>
-      <div style={{ maxWidth: 460, margin: "auto" }}>
-        <div style={{ textAlign: "center", marginBottom: 18 }}>
-          <div
-  style={{
-    fontSize: 70,
-    marginBottom: 10
-  }}
->
-  🤖
-</div>
-          <p
-  style={{
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#2563eb",
-    marginTop: 10,
-    marginBottom: 15
-  }}
->
-  💙 Ortak Hesap
-</p>
+      <style>{`
+        * {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 0;
+        }
+
+        .appShell {
+          width: 100%;
+          max-width: 520px;
+          margin: auto;
+        }
+
+        .topHeader {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          margin: 8px 0 18px;
+        }
+
+        .robotBox {
+          font-size: 58px;
+          line-height: 1;
+          flex: 0 0 auto;
+        }
+
+        .accountBox {
+          font-size: 28px;
+          font-weight: 900;
+          color: #2563eb;
+          text-align: right;
+          line-height: 1.1;
+          flex: 1;
+          white-space: nowrap;
+        }
+
+        .tabs {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 10px;
+          margin-bottom: 16px;
+        }
+
+        .timeText {
+          font-size: clamp(42px, 12vw, 64px);
+          font-weight: 900;
+          margin: 0;
+          letter-spacing: 1px;
+          color: ${textColor};
+        }
+
+        .dateText {
+          font-size: clamp(20px, 5vw, 28px);
+          margin: 10px 0 0;
+          color: ${textColor};
+          opacity: 0.9;
+        }
+
+        .summaryTitle {
+          font-size: clamp(20px, 5vw, 26px);
+          font-weight: 900;
+        }
+
+        .summaryAmount {
+          font-size: clamp(34px, 8vw, 44px);
+          font-weight: 900;
+          color: #2563eb;
+          margin-top: 8px;
+        }
+
+        .sectionTitle {
+          font-size: clamp(28px, 7vw, 36px);
+          margin: 18px 0 12px;
+          font-weight: 900;
+          color: ${textColor};
+        }
+
+        .appInput {
+          width: 100%;
+          padding: 18px;
+          border-radius: 18px;
+          border: 1px solid #d1d5db;
+          font-size: 20px;
+          margin-bottom: 12px;
+          background: ${darkMode ? "#111827" : "white"};
+          color: ${textColor};
+        }
+
+        .expenseRow {
+          display: grid;
+          grid-template-columns: 1fr auto auto;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .expenseName {
+          font-size: 20px;
+          font-weight: 900;
+        }
+
+        .expenseMeta {
+          font-size: 15px;
+          opacity: 0.75;
+          margin-top: 5px;
+        }
+
+        .expenseAmount {
+          font-size: 22px;
+          font-weight: 900;
+          color: #dc2626;
+          white-space: nowrap;
+        }
+
+        @media (max-width: 600px) {
+          body {
+            overflow-x: hidden;
+          }
+
+          .appShell {
+            max-width: 100%;
+          }
+
+          .topHeader {
+            margin-top: 2px;
+            margin-bottom: 14px;
+          }
+
+          .robotBox {
+            font-size: 50px;
+          }
+
+          .accountBox {
+            font-size: 25px;
+          }
+
+          .tabs {
+            gap: 8px;
+          }
+
+          .tabs button {
+            font-size: 18px !important;
+            padding: 16px 8px !important;
+          }
+
+          .appInput {
+            font-size: 20px;
+            padding: 18px;
+          }
+
+          button {
+            font-size: 20px !important;
+          }
+        }
+
+        @media (max-width: 380px) {
+          .robotBox {
+            font-size: 44px;
+          }
+
+          .accountBox {
+            font-size: 22px;
+          }
+
+          .tabs button {
+            font-size: 16px !important;
+          }
+        }
+      `}</style>
+
+      <div className="appShell">
+        <div className="topHeader">
+          <div className="robotBox">🤖</div>
+          <div className="accountBox">💙 Ortak Hesap</div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginBottom: 14 }}>
+        <div className="tabs">
           {[
             ["ana", "ANA"],
             ["rapor", "RAPOR"],
@@ -320,12 +464,12 @@ function App() {
 
         {tab === "ana" && (
           <>
-            <div style={{ ...card, textAlign: "center" }}>
-              <h2 style={{ fontSize: 34, margin: 0 }}>{time.toLocaleTimeString("tr-TR")}</h2>
-              <p>{time.toLocaleDateString("tr-TR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+            <div style={{ ...card, textAlign: "center", padding: "30px 18px" }}>
+              <h2 className="timeText">{time.toLocaleTimeString("tr-TR")}</h2>
+              <p className="dateText">{time.toLocaleDateString("tr-TR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
             </div>
 
-            <button onClick={() => setDarkMode(!darkMode)} style={{ ...btn, width: "100%", marginBottom: 14, background: darkMode ? "#facc15" : "#020617", color: darkMode ? "black" : "white" }}>
+            <button onClick={() => setDarkMode(!darkMode)} style={{ ...btn, width: "100%", marginBottom: 14, background: "#020617", color: "white" }}>
               {darkMode ? "☀️ Gündüz Modu" : "🌙 Gece Modu"}
             </button>
 
@@ -333,49 +477,59 @@ function App() {
               Çıkış Yap
             </button>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <div style={card}><b>💳 Bugün</b><h2>{todayTotal} TL</h2></div>
-              <div style={card}><b>📈 Toplam</b><h2>{total} TL</h2></div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ ...card, textAlign: "center" }}>
+                <div className="summaryTitle">💳 Bugün</div>
+                <div className="summaryAmount">{todayTotal} TL</div>
+              </div>
+              <div style={{ ...card, textAlign: "center" }}>
+                <div className="summaryTitle">📈 Toplam</div>
+                <div className="summaryAmount">{total} TL</div>
+              </div>
             </div>
 
+            <div style={card}>
+              <input
+                className="appInput"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && harcamaEkle()}
+                placeholder="300 market / 1500 pantolon 3 taksit"
+              />
+
+              <button onClick={harcamaEkle} style={{ ...btn, width: "100%", background: "linear-gradient(90deg,#2563eb,#9333ea)", color: "white" }}>
+                💾 Harcamayı Kaydet
+              </button>
+            </div>
+
+            <h2 className="sectionTitle">Son Harcamalar</h2>
+
             <input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && harcamaEkle()}
-              placeholder="300 market / 1500 pantolon 3 taksit"
-              style={{ width: "100%", padding: 16, borderRadius: 18, border: "none", boxSizing: "border-box", fontSize: 16, marginBottom: 10 }}
-            />
-
-            <button onClick={harcamaEkle} style={{ ...btn, width: "100%", background: "linear-gradient(90deg,#2563eb,#9333ea)", color: "white", fontSize: 17 }}>
-              💾 Harcamayı Kaydet
-            </button>
-
-            <h2>Son Harcamalar</h2>
-
-            <input
+              className="appInput"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Ara: market, sigara, giyim..."
-              style={{ width: "100%", padding: 13, borderRadius: 14, border: "none", boxSizing: "border-box", marginBottom: 12 }}
             />
 
             {filteredExpenses.map((x) => (
               <div key={x.id} style={card}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                <div className="expenseRow">
                   <div>
-                    <b>{icons[x.kategori] || "📦"} {x.aciklama}</b>
-                    <div style={{ opacity: 0.7, fontSize: 13 }}>
-                      {new Date(x.created_at).toLocaleDateString("tr-TR")} - {x.kullanici}
+                    <div className="expenseName">{icons[x.kategori] || "📦"} {x.aciklama}</div>
+                    <div className="expenseMeta">
+                      {new Date(x.created_at).toLocaleDateString("tr-TR")} - Ortak Hesap
+                    </div>
+                    <div className="expenseMeta">
+                      {x.kategori} | {x.taksit || 1} taksit | Aylık: {x.aylik_tutar || x.tutar} TL
                     </div>
                   </div>
-                  <b>{x.tutar} TL</b>
+
+                  <div className="expenseAmount">{x.tutar} TL</div>
+
+                  <button onClick={() => harcamaSil(x.id)} style={{ ...btn, background: "#dc2626", color: "white", padding: "12px 14px" }}>
+                    🗑️
+                  </button>
                 </div>
-
-                <p>{x.kategori} | {x.taksit || 1} taksit | Aylık: {x.aylik_tutar || x.tutar} TL</p>
-
-                <button onClick={() => harcamaSil(x.id)} style={{ ...btn, background: "#dc2626", color: "white", width: "100%" }}>
-                  Sil
-                </button>
               </div>
             ))}
           </>
@@ -427,10 +581,10 @@ function App() {
                   <b>{icons[cat]} {cat}: {used} / {limit} TL</b>
 
                   <input
+                    className="appInput"
                     type="number"
                     value={limits[cat]}
                     onChange={(e) => setLimits({ ...limits, [cat]: Number(e.target.value) })}
-                    style={{ width: "100%", padding: 10, marginTop: 8, borderRadius: 12, border: "none", boxSizing: "border-box" }}
                   />
 
                   <div style={{ height: 16, background: "#e5e7eb", borderRadius: 20, marginTop: 8, overflow: "hidden" }}>
@@ -449,7 +603,7 @@ function App() {
         {tab === "ai" && (
           <div style={card}>
             <h2>🤖 AI Finans Yorumu</h2>
-            <p>{aiComment()}</p>
+            <p style={{ fontSize: 20, lineHeight: 1.5 }}>{aiComment()}</p>
             <hr />
             <p>Toplam harcama: <b>{total} TL</b></p>
             <p>En yüksek kategori: <b>{topCategory?.[0] || "Yok"}</b></p>
